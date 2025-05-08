@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>線上西洋棋</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <h1>線上西洋棋</h1>
+        <div id="game-container">
+            <div id="player-info">
+                <div id="current-player">輪到：白方</div>
+                <div id="room-info">
+                    房間 ID：<span id="room-id"></span>
+                    <input type="text" id="join-room" placeholder="輸入房間 ID">
+                    <button id="join-btn">加入房間</button>
+                    <button id="new-room-btn">建立新房間</button>
+                </div>
+                <div id="game-status" class="status-message"></div>
+            </div>
+            <div id="chessboard"></div>
+        </div>
+    </div>
+
+    <!-- 引入 GUN.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
