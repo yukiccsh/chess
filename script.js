@@ -339,17 +339,31 @@ class ChessGame {
         this.playerColor = 'white';
         document.getElementById('room-id').textContent = this.roomId;
         
-        // 清除可能的舊資料
         const gameRef = gun.get('chess').get(this.roomId);
-        gameRef.get('gameState').put(null);
         
-        this.setupGunSync();
+        // 立即設置初始遊戲狀態
+        const initialState = {
+            board: JSON.stringify(this.board),
+            currentPlayer: this.currentPlayer,
+            lastUpdate: Date.now(),
+            initialized: true
+        };
         
-        // 顯示房間創建成功訊息
-        const status = document.getElementById('game-status');
-        if (status) {
-            status.textContent = `房間已創建！房間 ID: ${this.roomId}`;
-        }
+        gameRef.get('gameState').put(initialState, (ack) => {
+            if (ack.err) {
+                const status = document.getElementById('game-status');
+                if (status) {
+                    status.textContent = '建立房間失敗，請重試。';
+                }
+                return;
+            }
+            
+            this.setupGunSync();
+            const status = document.getElementById('game-status');
+            if (status) {
+                status.textContent = `房間已創建！房間 ID: ${this.roomId}`;
+            }
+        });
     }
 
     joinRoom(roomId) {
@@ -359,14 +373,16 @@ class ChessGame {
         this.playerColor = 'black';
         document.getElementById('room-id').textContent = this.roomId;
         
-        // 檢查房間是否存在
+        // 改進房間存在性檢查
         const gameRef = gun.get('chess').get(this.roomId);
-        gameRef.get('gameState').once((data) => {
-            if (!data) {
+        gameRef.get('gameState').once((data, key) => {
+            if (!data || data.board === undefined) {
                 const status = document.getElementById('game-status');
                 if (status) {
                     status.textContent = '找不到該房間，請確認房間 ID 是否正確。';
                 }
+                this.roomId = null;
+                this.playerColor = null;
                 return;
             }
             
@@ -379,11 +395,13 @@ class ChessGame {
     }
 
     setupGunSync() {
+        if (!this.roomId) return;
+
         const gameRef = gun.get('chess').get(this.roomId);
         
         // 監聽遊戲狀態變化
-        gameRef.get('gameState').on((data) => {
-            if (!data) return;
+        gameRef.get('gameState').on((data, key) => {
+            if (!data || data.board === undefined) return;
             
             if (data.board && data.currentPlayer) {
                 // 確保不是自己發出的更新
@@ -413,16 +431,16 @@ class ChessGame {
     }
 
     syncGameState() {
-        if (this.roomId) {
-            const gameRef = gun.get('chess').get(this.roomId);
-            const gameState = {
-                board: JSON.stringify(this.board),
-                currentPlayer: this.currentPlayer,
-                lastUpdate: Date.now()
-            };
-            
-            gameRef.get('gameState').put(gameState);
-        }
+        if (!this.roomId) return;
+        
+        const gameRef = gun.get('chess').get(this.roomId);
+        const gameState = {
+            board: JSON.stringify(this.board),
+            currentPlayer: this.currentPlayer,
+            lastUpdate: Date.now()
+        };
+        
+        gameRef.get('gameState').put(gameState);
     }
 }
 
